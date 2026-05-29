@@ -176,8 +176,8 @@ Upload a video file for analysis.
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/your-username/offside-ai.git
-cd offside-ai
+git clone https://github.com/sabkatdesh/football_offside-ai.git
+cd football_offside-ai
 
 # 2. Create virtual environment
 python -m venv venv
@@ -186,10 +186,12 @@ source venv/bin/activate        # Windows: venv\Scripts\activate
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Start the server
+# 4. Download the models (see Models section below)
+
+# 5. Start the server
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-# 5. Open in browser
+# 6. Open in browser
 # http://localhost:8000
 ```
 
@@ -215,14 +217,28 @@ tqdm
 
 ## Models
 
-Two custom YOLO models are used:
+Two custom YOLO models are required. They are hosted on HuggingFace and must be placed in the root of the project directory before running.
 
-| Model | Purpose |
-|---|---|
-| `football-pitch-detection.pt` | Detects 32 pitch keypoints for homography |
-| `football-player-detection.pt` | Detects ball, players, goalkeepers, referees |
+| Model | Purpose | Download |
+|---|---|---|
+| `football-pitch-detection.pt` | Detects 32 pitch keypoints for homography | [🤗 Sabkat/football-pitch-detection](https://huggingface.co/Sabkat/football-pitch-detection) |
+| `football-player-detection.pt` | Detects ball, players, goalkeepers, referees | [🤗 Sabkat/football-player-detection](https://huggingface.co/Sabkat/football-player-detection) |
 
-Both models are included in the repository.
+### Download instructions
+
+You can download the `.pt` files directly from the HuggingFace model pages linked above, or use the HuggingFace CLI:
+
+```bash
+pip install huggingface_hub
+
+python -c "
+from huggingface_hub import hf_hub_download
+hf_hub_download(repo_id='Sabkat/football-pitch-detection', filename='football-pitch-detection.pt', local_dir='.')
+hf_hub_download(repo_id='Sabkat/football-player-detection', filename='football-player-detection.pt', local_dir='.')
+"
+```
+
+Place both `.pt` files in the root project directory alongside `main.py`.
 
 ---
 
