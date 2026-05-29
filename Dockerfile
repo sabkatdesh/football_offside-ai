@@ -1,5 +1,4 @@
 # ── Base image ────────────────────────────────────────────────────────────────
-# CPU-only torch — keeps image size reasonable on HF free tier
 FROM python:3.10-slim
 
 # ── System deps ───────────────────────────────────────────────────────────────
@@ -17,7 +16,6 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # ── Install Python deps ───────────────────────────────────────────────────────
-# Copy requirements first so Docker caches this layer
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
@@ -27,10 +25,6 @@ COPY pipeline_3.py .
 COPY offside_2.py .
 COPY validator.py .
 COPY index.html .
-
-# ── Copy model weights ────────────────────────────────────────────────────────
-COPY football-pitch-detection.pt .
-COPY football-player-detection.pt .
 
 # ── Create runtime dirs ───────────────────────────────────────────────────────
 RUN mkdir -p uploads outputs
