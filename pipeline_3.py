@@ -15,10 +15,22 @@ from offside_2 import (
     get_ball_possessor,
     check_offside_involvement,
 )
+from huggingface_hub import hf_hub_download
+import torch
+
+
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # ── Models (loaded once at import time) ───────────────────────────────────────
-pitch_detector  = YOLO('football-pitch-detection.pt').to('cuda')
-player_detector = YOLO('football-player-detection.pt').to('cuda')
+pitch_detector = YOLO(hf_hub_download(
+    repo_id="Sabkat/football-pitch-detection",
+    filename="football-pitch-detection.pt"
+)).to(device)
+
+player_detector = YOLO(hf_hub_download(
+    repo_id="Sabkat/football-player-detection",
+    filename="football-player-detection.pt"
+)).to(device)
 
 # ── Config ────────────────────────────────────────────────────────────────────
 CONFIG = SoccerPitchConfiguration()
@@ -102,13 +114,13 @@ def collect_crops_and_fit_classifier(source_path: str) -> TeamClassifier:
 
     crops = []
     for frame in tqdm(frame_generator, desc='collecting crops'):
-        result             = player_detector(frame, conf=0.3, device='cuda')[0]
+        result             = player_detector(frame, conf=0.3, device=device)[0]
         detections         = sv.Detections.from_ultralytics(result)
         players_detections = detections[detections.class_id == PLAYER_ID]
         players_crops      = [sv.crop_image(frame, xyxy) for xyxy in players_detections.xyxy]
         crops             += players_crops
 
-    team_classifier = TeamClassifier(device='cuda')
+    team_classifier = TeamClassifier(device=device)
     team_classifier.fit(crops)
     print("Team classifier ready.")
     return team_classifier
@@ -173,7 +185,7 @@ def run_pipeline(source_path: str, output_path: str) -> dict:
             annotated_frame = frame.copy()
 
             # ── Pitch detection ───────────────────────────────────────────────
-            pitch_result = pitch_detector(frame, conf=0.3, device='cuda')[0]
+            pitch_result = pitch_detector(frame, conf=0.3, device=device)[0]
             key_points   = sv.KeyPoints.from_ultralytics(pitch_result)
 
             kp_filter              = key_points.confidence[0] > 0.5
@@ -207,7 +219,7 @@ def run_pipeline(source_path: str, output_path: str) -> dict:
                     annotated_frame = vertex_annotator.annotate(scene=annotated_frame, key_points=frame_ref_kp)
 
             # ── Player detection ──────────────────────────────────────────────
-            player_result = player_detector(frame, conf=0.3, device='cuda')[0]
+            player_result = player_detector(frame, conf=0.3, device=device)[0]
             detections    = sv.Detections.from_ultralytics(player_result)
 
             ball_detections      = detections[detections.class_id == BALL_ID]
