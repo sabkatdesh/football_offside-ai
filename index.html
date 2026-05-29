@@ -192,9 +192,11 @@
   /* ── Video elements ──────────────────────────────────────────── */
   video {
     width: 100%;
+    max-height: 480px;
     border-radius: 2px;
     background: #000;
     display: block;
+    object-fit: contain;
   }
   .video-placeholder {
     width: 100%;
@@ -365,6 +367,31 @@
   .frame-num { color: var(--accent); }
   .from-null { color: var(--text-dim); font-style: italic; }
 
+  /* ── Download button ─────────────────────────────────────────── */
+  #download-btn {
+    display: none;
+    margin-top: 12px;
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--accent);
+    border: 1.5px solid var(--accent);
+    border-radius: 3px;
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+  }
+  #download-btn:hover {
+    background: var(--accent);
+    color: #000;
+  }
+
   /* ── Reset btn ───────────────────────────────────────────────── */
   #reset-btn {
     display: none;
@@ -453,6 +480,11 @@
     <!-- Analyze button -->
     <button id="analyze-btn">▶ &nbsp; Run Analysis</button>
 
+    <!-- Download result button -->
+    <a id="download-btn" style="display:none;" href="#" download="offside_analysis.mp4">
+      ⬇ &nbsp; Download Result Video
+    </a>
+
     <!-- Processing indicator -->
     <div id="processing-bar">
       <div class="bar-label">
@@ -519,6 +551,7 @@
   const verdictLabel   = document.getElementById('verdict-label');
   const verdictSub     = document.getElementById('verdict-sub');
   const resetBtn       = document.getElementById('reset-btn');
+  const downloadBtn    = document.getElementById('download-btn');
   const logSection     = document.getElementById('log-section');
   const logBody        = document.getElementById('log-body');
 
@@ -551,7 +584,7 @@
     analyzeBtn.style.display = 'block';
 
     // reset state
-    hide(errorBox); hide(verdictBox); hide(resetBtn); hide(logSection);
+    hide(errorBox); hide(verdictBox); hide(resetBtn); hide(downloadBtn); hide(logSection);
     outputVideo.style.display = 'none';
     outputPH.style.display = 'flex';
     outputTag.textContent = 'PENDING';
@@ -565,7 +598,7 @@
     // UI: start loading
     analyzeBtn.disabled = true;
     show(processingBar);
-    hide(errorBox); hide(verdictBox); hide(resetBtn); hide(logSection);
+    hide(errorBox); hide(verdictBox); hide(resetBtn); hide(downloadBtn); hide(logSection);
     processingStatus.textContent = 'Validating video…';
 
     const formData = new FormData();
@@ -592,9 +625,16 @@
 
       // show output video
       outputPH.style.display = 'none';
-      outputVideo.src = data.output_video_url;
+      outputVideo.src = data.output_video_url + '?t=' + Date.now(); // cache-bust
+      outputVideo.type = 'video/mp4';
+      outputVideo.load();   // ← CRITICAL: force browser to reload the new src
       outputVideo.style.display = 'block';
       outputTag.textContent = 'READY';
+
+      // show download button
+      downloadBtn.href = data.output_video_url;
+      downloadBtn.download = 'offside_analysis.mp4';
+      show(downloadBtn);
 
       // verdict banner
       verdictLabel.textContent = verdict;
@@ -644,7 +684,7 @@
     videoGrid.style.display = 'none';
     analyzeBtn.style.display = 'none';
     hide(processingBar); hide(errorBox); hide(verdictBox);
-    hide(resetBtn); hide(logSection);
+    hide(resetBtn); hide(downloadBtn); hide(logSection);
     outputVideo.style.display = 'none';
     outputPH.style.display = 'flex';
     outputTag.textContent = 'PENDING';
